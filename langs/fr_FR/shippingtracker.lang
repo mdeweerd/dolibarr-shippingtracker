@@ -1,0 +1,46 @@
+# ShippingTracker Module - French translations
+# Language: fr_FR
+# Format: key=value
+
+Module104300Name=ShippingTracker
+Module104300Desc=Ajoute le numéro de suivi et les informations de transporteur aux commandes et factures fournisseurs
+ShippingTrackerDescription=Ajoute le numéro de suivi et les informations de transporteur aux commandes et factures fournisseurs
+ShippingTrackerDescriptionLong=Ce module vous permet d'ajouter des informations de suivi (numéro AWB, transporteur et URL de suivi) aux commandes et factures fournisseurs. Les informations de suivi peuvent être synchronisées des commandes vers les factures liées.
+
+# Tracking UI
+ShippingTracking=Suivi d'expédition
+TrackingNumber=Numéro de suivi (AWB)
+TrackingLink=Lien de suivi
+SetTracking=Définir le suivi
+TrackingAWB=Numéro AWB
+ShippingMethodCode=Code de la méthode d'expédition
+
+# Actions
+Save=Enregistrer
+Cancel=Annuler
+Modify=Modifier
+Select=Sélectionner
+Remove=Supprimer
+
+# Status messages
+TrackingInfoSaved=Les informations de suivi ont été enregistrées avec succès
+TrackingInfoSavedAndSynced=Les informations de suivi ont été enregistrées et synchronisées avec les factures liées
+TrackingInfoCleared=Les informations de suivi ont été supprimées avec succès
+
+# Error messages
+ErrorFailedToSetTrackingInfo=Échec de la définition des informations de suivi
+ErrorFailedToClearTrackingInfo=Échec de la suppression des informations de suivi
+ErrorSyncTrackingToInvoices=Erreur lors de la synchronisation des informations de suivi vers les factures
+InvoiceHasDifferentTracking=Attention: Cette facture a des informations de suivi différentes de sa commande liée
+ConfirmCancelTrackingEdit=Êtes-vous sûr de vouloir annuler la modification des informations de suivi?
+ConfirmClearTrackingInfo=Êtes-vous sûr de vouloir effacer les informations de suivi?
+
+# Field states
+NotDefined=Non défini
+ErrorFieldRequired=Ce champ est obligatoire
+
+# Sending method
+SendingMethod=Méthode d'expédition
+
+# Permission
+manage_shipping_tracking=Gérer le suivi d'expédition

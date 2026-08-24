@@ -1,0 +1,46 @@
+# ShippingTracker Module - English translations
+# Language: en_US
+# Format: key=value
+
+Module104300Name=ShippingTracker
+Module104300Desc=Adds tracking number and carrier information to supplier orders and invoices
+ShippingTrackerDescription=Adds tracking number and carrier information to supplier orders and invoices
+ShippingTrackerDescriptionLong=This module allows you to add tracking information (Air Waybill number, carrier, and tracking URL) to supplier orders and supplier invoices. Tracking information can be synced from orders to linked invoices.
+
+# Tracking UI
+ShippingTracking=Shipping Tracking
+TrackingNumber=Tracking Number (AWB)
+TrackingLink=Tracking Link
+SetTracking=Set Tracking
+TrackingAWB=Tracking AWB
+ShippingMethodCode=Shipping Method Code
+
+# Actions
+Save=Save
+Cancel=Cancel
+Modify=Modify
+Select=Select
+Remove=Remove
+
+# Status messages
+TrackingInfoSaved=Tracking information saved successfully
+TrackingInfoSavedAndSynced=Tracking information saved and synced to linked invoices
+TrackingInfoCleared=Tracking information cleared successfully
+
+# Error messages
+ErrorFailedToSetTrackingInfo=Failed to set tracking information
+ErrorFailedToClearTrackingInfo=Failed to clear tracking information
+ErrorSyncTrackingToInvoices=Error syncing tracking information to invoices
+InvoiceHasDifferentTracking=Warning: This invoice has tracking information that differs from its linked order
+ConfirmCancelTrackingEdit=Are you sure you want to cancel editing tracking information?
+ConfirmClearTrackingInfo=Are you sure you want to clear the tracking information?
+
+# Field states
+NotDefined=Not defined
+ErrorFieldRequired=This field is required
+
+# Sending method
+SendingMethod=Sending Method
+
+# Permission
+manage_shipping_tracking=Manage shipping tracking
