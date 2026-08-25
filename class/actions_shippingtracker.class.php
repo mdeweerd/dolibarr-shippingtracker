@@ -219,8 +219,8 @@ class ActionsShippingTracker extends CommonHookActions
 		print '</td></tr>';
 
 		// Add JavaScript for edit functionality
-		$confirmCancelMsg = $langs->trans('ConfirmCancelTrackingEdit');
-		$confirmClearMsg = $langs->trans('ConfirmClearTrackingInfo');
+		$confirmCancelMsg = html_entity_decode($langs->trans('ConfirmCancelTrackingEdit'), ENT_QUOTES, 'UTF-8');
+		$confirmClearMsg = html_entity_decode($langs->trans('ConfirmClearTrackingInfo'), ENT_QUOTES, 'UTF-8');
 		print '<script type="text/javascript">';
 		print 'function startEditTracking() {';
 		print '    document.location.href = "'.dol_escape_js($_SERVER['PHP_SELF']).'?id='.$object->id.'&action=edit_tracking&token='.newToken().'";';
