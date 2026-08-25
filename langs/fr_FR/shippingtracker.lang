@@ -33,7 +33,7 @@ ErrorFailedToClearTrackingInfo=Échec de la suppression des informations de suiv
 ErrorSyncTrackingToInvoices=Erreur lors de la synchronisation des informations de suivi vers les factures
 InvoiceHasDifferentTracking=Attention: Cette facture a des informations de suivi différentes de sa commande liée
 ConfirmCancelTrackingEdit=Êtes-vous sûr de vouloir annuler la modification des informations de suivi?
-ConfirmClearTrackingInfo=Êtes-vous sûr de vouloir effacer les informations de suivi?
+ConfirmClearTrackingInfo=Êtes-vous sûr de vouloir supprimer les informations de suivi?
 
 # Field states
 NotDefined=Non défini
