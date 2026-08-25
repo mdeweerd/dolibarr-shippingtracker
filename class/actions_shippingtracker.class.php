@@ -226,14 +226,14 @@ class ActionsShippingTracker extends CommonHookActions
 		print '    document.location.href = "'.dol_escape_js($_SERVER['PHP_SELF']).'?id='.$object->id.'&action=edit_tracking&token='.newToken().'";';
 		print '}';
 		print 'function confirmCancel() {';
-		print '    if (confirm("'.dol_escape_js($confirmCancelMsg).'")) {';
+		print '    if (confirm("'.addslashes($confirmCancelMsg).'")) {';
 		print '        document.location.href = "'.dol_escape_js($_SERVER['PHP_SELF']).'?id='.$object->id.'&token='.newToken().'";';
 		print '        return true;';
 		print '    }';
 		print '    return false;';
 		print '}';
 		print 'function confirmClear() {';
-		print '    if (confirm("'.dol_escape_js($confirmClearMsg).'")) {';
+		print '    if (confirm("'.addslashes($confirmClearMsg).'")) {';
 		print '        return true;';
 		print '    }';
 		print '    return false;';
