@@ -189,7 +189,7 @@ class ActionsShippingTracker extends CommonHookActions
 			print '<div class="center" style="margin-top: 10px;">';
 			print '<input type="submit" class="button" name="save_tracking" value="'.$langs->trans('Save').'">';
 			print ' &nbsp; ';
-			print '<input type="submit" class="button" name="clear_tracking" value="'.$langs->trans('Remove').'" onclick="return confirmClear();">';
+			print '<input type="submit" class="button" name="clear_tracking" value="'.$langs->trans('Delete').'" onclick="return confirmClear();">';
 			print ' &nbsp; ';
 			print '<input type="button" class="button" name="cancel_tracking" value="'.$langs->trans('Cancel').'" onclick="return confirmCancel();">';
 			print '</div>';
