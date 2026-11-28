@@ -35,6 +35,7 @@ Thumbs.db
 /dolibarr_*.sql
 /dolibarr_*.zip
 /dolibarr_*.tar.gz
+/dolibarr/
 /_private/
 /.ht*
 /*.HT*

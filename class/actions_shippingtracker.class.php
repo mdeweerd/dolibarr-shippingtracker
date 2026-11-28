@@ -419,7 +419,7 @@ class ActionsShippingTracker extends CommonHookActions
 		}
 
 		// Find linked invoices
-		$order->fetchObjectLinked('', '', null, '', 'OR', 1);
+		$order->fetchObjectLinked(null, '', null, '', 'OR', 1);
 		$invoices = isset($order->linkedObjects['facture_fourn']) ? $order->linkedObjects['facture_fourn'] : array();
 
 		if (!is_array($invoices) || empty($invoices)) {

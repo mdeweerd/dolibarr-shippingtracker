@@ -69,6 +69,7 @@ return [
 		'dolibarr/htdocs/core',
 		'dolibarr/htdocs/fourn/class',
 		'dolibarr/htdocs/expedition/class',
+		'dolibarr/htdocs/user/class',
 		// Analysed.
 		'admin',
 		'class',

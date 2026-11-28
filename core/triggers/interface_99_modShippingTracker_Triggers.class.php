@@ -39,7 +39,7 @@ class InterfaceShippingTrackerTriggers extends DolibarrTriggers
 		parent::__construct($db);
 		$this->family = "shippingtracker";
 		$this->description = "ShippingTracker triggers for syncing tracking information.";
-		$this->version = '1.0.0';
+		$this->version = 'dolibarr';
 		$this->picto = 'generic';
 	}
 
@@ -187,9 +187,12 @@ class InterfaceShippingTrackerTriggers extends DolibarrTriggers
 		require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.commande.class.php';
 
 		$order = null;
-		if (isset($invoice->fk_commande) && $invoice->fk_commande > 0) {
-			$order = new CommandeFournisseur($db);
-			$order->fetch($invoice->fk_commande);
+		$invoice->fetchObjectLinked(null, '', null, 'commande_fournisseur', 'OR', 1);
+		if (!empty($invoice->linkedObjects['commande_fournisseur'])) {
+			$linked = reset($invoice->linkedObjects['commande_fournisseur']);
+			if ($linked instanceof CommandeFournisseur) {
+				$order = $linked;
+			}
 		}
 
 		if (!$order || $order->id == 0) {

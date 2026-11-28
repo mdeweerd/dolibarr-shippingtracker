@@ -185,11 +185,11 @@ class modShippingTracker extends DolibarrModules
 
 		// Main menus
 		// Add here entries to declare new menus
-		$this->menus = array();
+		$this->menu = array();
 		// Example to declare a new top menu entry:
-		// $this->menus = array(array('mainmenu'=>'mymodule','leftmenu'=>'mymodule:myobject', 'type' => 'top', 'titre' => 'MyModuleTopMenu', 'mainmenu' => 'mymodule', 'leftmenu' => '', 'url' => '/mymodule/myobject_list.php', 'langs' => 'mylangs@mymodule', 'position' => 100, 'perms' => '$user->rights->mymodule->myobject->read', 'enabled' => 'isModEnabled("mymodule")', 'target' => '', 'user' => 2);
+		// $this->menu = array(array('mainmenu'=>'mymodule','leftmenu'=>'mymodule:myobject', 'type' => 'top', 'titre' => 'MyModuleTopMenu', 'mainmenu' => 'mymodule', 'leftmenu' => '', 'url' => '/mymodule/myobject_list.php', 'langs' => 'mylangs@mymodule', 'position' => 100, 'perms' => '$user->rights->mymodule->myobject->read', 'enabled' => 'isModEnabled("mymodule")', 'target' => '', 'user' => 2);
 		// Example to declare a left menu entry into an existing top menu entry:
-		// $this->menus = array(array('mainmenu' => 'mymodule', 'leftmenu' => 'mymodule:myobject', 'type' => 'left', 'titre' => 'MyObject', 'url' => '/mymodule/myobject_list.php', 'langs' => 'mylangs@mymodule', 'position' => 100, 'perms' => '$user->rights->mymodule->myobject->read', 'enabled' => 'isModEnabled("mymodule")', 'target' => '', 'user' => 2);
+		// $this->menu = array(array('mainmenu' => 'mymodule', 'leftmenu' => 'mymodule:myobject', 'type' => 'left', 'titre' => 'MyObject', 'url' => '/mymodule/myobject_list.php', 'langs' => 'mylangs@mymodule', 'position' => 100, 'perms' => '$user->rights->mymodule->myobject->read', 'enabled' => 'isModEnabled("mymodule")', 'target' => '', 'user' => 2);
 	}
 
 	/**

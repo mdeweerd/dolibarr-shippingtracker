@@ -8,33 +8,8 @@
  * (can be combined with --load-baseline)
  */
 return [
-    // # Issue statistics:
-    // PhanUndeclaredClassProperty : 4 occurrences
-    // PhanUndeclaredProperty : 3 occurrences
-    // PhanUndeclaredTypeParameter : 3 occurrences
-    // PhanRedefineFunction : 1 occurrence
-    // PhanTypeMismatchArgumentProbablyReal : 1 occurrence
-    // PhanTypeMismatchPropertyProbablyReal : 1 occurrence
-
+    // This baseline has no suppressions
     'file_suppressions' => [
-        '.ci/dolibarr-runtime.php' => [
-            'PhanRedefineFunction' => ['\\newToken']
-        ],
-        'admin/shippingtracker_setup.php' => [
-            'PhanUndeclaredClassProperty' => ['admin/shippingtracker_setup.php']
-        ],
-        'class/actions_shippingtracker.class.php' => [
-            'PhanTypeMismatchArgumentProbablyReal' => ['\\ActionsShippingTracker::syncTrackingToInvoices'],
-            'PhanUndeclaredClassProperty' => ['\\ActionsShippingTracker::displayTrackingUI', '\\ActionsShippingTracker::doActions']
-        ],
-        'core/modules/modShippingTracker.class.php' => [
-            'PhanUndeclaredProperty' => ['\\modShippingTracker::__construct']
-        ],
-        'core/triggers/interface_99_modShippingTracker_Triggers.class.php' => [
-            'PhanTypeMismatchPropertyProbablyReal' => ['\\InterfaceShippingTrackerTriggers::__construct'],
-            'PhanUndeclaredProperty' => ['\\InterfaceShippingTrackerTriggers::checkInvoiceTrackingConsistency'],
-            'PhanUndeclaredTypeParameter' => ['\\InterfaceShippingTrackerTriggers::checkInvoiceTrackingConsistency', '\\InterfaceShippingTrackerTriggers::runTrigger', '\\InterfaceShippingTrackerTriggers::syncTrackingOnOrderModify']
-        ],
     ],
     // 'directory_suppressions' => ['src/directory_name' => ['PhanIssueName1', 'PhanIssueName2']] can be manually added if needed.
     // (directory_suppressions will currently be ignored by subsequent calls to --save-baseline, but may be preserved in future Phan releases)
