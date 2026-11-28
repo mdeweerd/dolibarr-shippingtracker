@@ -38,8 +38,10 @@ plan, TODO and code all land in commits.
 
 Any problem or task not tracked in TODO.md or PLAN.md becomes an issue
 with a short factual title and labels (bug, feature, spec, infra,
-question). When picked up, mirror it in TODO.md and reference the issue
-number in the commits.
+security, question). When picked up, mirror it in TODO.md and reference
+the issue number in the commits. A security finding is an issue with
+the security label, never a code comment that silently documents a
+weakness.
 
 ## Action log
 
@@ -76,4 +78,8 @@ states which sub-agent produced what.
 The specification, plan and TODO exist and are committed; the pipeline
 is green end to end (lint, pre-commit, analysis from the baselines,
 instance tests, page smoke) on every run; and the first action log entry
-records the pinned versions and job names.
+records the pinned versions and job names. The security audit of the
+delivered surface ran with the task: what it exposes, who may reach it,
+who must not (verified as a failing forbidden case), inputs validated,
+outputs escaped, data isolated. Its findings are a fix or a tracked
+issue; "it works" is not "it is safe".
