@@ -35,7 +35,11 @@ Thumbs.db
 /dolibarr_*.sql
 /dolibarr_*.zip
 /dolibarr_*.tar.gz
+/dolibarr.tar.gz
 /dolibarr/
+/phan.phar
+/phpstan.phar
+/phpunit.phar
 /_private/
 /.ht*
 /*.HT*
