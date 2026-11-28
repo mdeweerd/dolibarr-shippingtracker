@@ -1,0 +1,34 @@
+# Pre-commit hooks of this repository.
+# CI: .github/workflows/lint.yml runs `pre-commit run --all-files` in its
+# own job, with the local php-lint hook skipped there (the dedicated
+# php-lint job runs it with PHP installed).
+# Locally: pipx install pre-commit (or pip), then `pre-commit install`.
+files: ^.*\.(php|md|sh|bash|yaml|yml|json)$
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: mixed-line-ending
+        args: [--fix=lf]
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1-1
+    hooks:
+      - id: shellcheck
+        args: [--shell, bash]
+  - repo: local
+    hooks:
+      # The heavy analysis (phpstan, phan) stays in the CI jobs; a
+      # per-commit run would be too slow for the ergonomics of the
+      # project.
+      - id: php-lint
+        name: php -l
+        entry: php -l
+        language: system
+        files: \.php$
+        require_serial: true

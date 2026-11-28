@@ -129,7 +129,7 @@ class modShippingTracker extends DolibarrModules
 		// Permissions provided by this module
 		$this->rights = array();
 		$r = 0;
-		
+
 		$r++;
 		$this->rights[$r][0] = $this->numero . sprintf('%02d', 1);  // Permission ID: 10430001
 		$this->rights[$r][1] = 'Manage shipping tracking information';

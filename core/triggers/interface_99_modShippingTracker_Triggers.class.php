@@ -92,7 +92,7 @@ class InterfaceShippingTrackerTriggers extends DolibarrTriggers
 		$order->fetch_optionals();
 
 		$has_tracking = !empty($order->array_options['options_tracking_awb']);
-		
+
 		if (!$has_tracking) {
 			return 0; // No tracking info to sync
 		}
@@ -102,11 +102,11 @@ class InterfaceShippingTrackerTriggers extends DolibarrTriggers
 
 		// Find linked invoices
 		$facture_fournisseur = new FactureFournisseur($db);
-		
+
 		// Try to get linked invoices - use the order's getLinkedInvoices method if available
 		// Otherwise, try to find invoices that reference this order
 		$invoices = array();
-		
+
 		if (method_exists($order, 'getLinkedInvoices')) {
 			$invoices = $order->getLinkedInvoices();
 		} else {
@@ -114,7 +114,7 @@ class InterfaceShippingTrackerTriggers extends DolibarrTriggers
 			$sql = "SELECT f.rowid, f.ref";
 			$sql .= " FROM " . $db->prefix() . "facture_fourn as f";
 			$sql .= " WHERE f.fk_commande = " . (int) $order->id;
-			
+
 			$resql = $db->query($sql);
 			if ($resql) {
 				while ($obj = $db->fetch_object($resql)) {
@@ -131,7 +131,7 @@ class InterfaceShippingTrackerTriggers extends DolibarrTriggers
 		}
 
 		$updated = 0;
-		
+
 		foreach ($invoices as $invoice) {
 			// Skip if invoice is not valid
 			if ($invoice->status != FactureFournisseur::STATUS_VALIDATED) {
@@ -176,16 +176,16 @@ class InterfaceShippingTrackerTriggers extends DolibarrTriggers
 
 		// Check if invoice has tracking info
 		$invoice->fetch_optionals();
-		
+
 		$invoice_has_tracking = !empty($invoice->array_options['options_tracking_awb']);
-		
+
 		if (!$invoice_has_tracking) {
 			return 0; // No tracking on invoice, nothing to check
 		}
 
 		// Find linked order
 		require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.commande.class.php';
-		
+
 		$order = null;
 		if (isset($invoice->fk_commande) && $invoice->fk_commande > 0) {
 			$order = new CommandeFournisseur($db);
@@ -197,9 +197,9 @@ class InterfaceShippingTrackerTriggers extends DolibarrTriggers
 		}
 
 		$order->fetch_optionals();
-		
+
 		$order_has_tracking = !empty($order->array_options['options_tracking_awb']);
-		
+
 		if (!$order_has_tracking) {
 			return 0; // Order has no tracking, nothing to compare
 		}
@@ -211,7 +211,7 @@ class InterfaceShippingTrackerTriggers extends DolibarrTriggers
 		if ($invoice_awb != $order_awb) {
 			// Invoice has different tracking than order - this is a warning
 			dol_syslog("Invoice " . $invoice->ref . " has different tracking (" . $invoice_awb . ") than linked order " . $order->ref . " (" . $order_awb . ")", LOG_WARNING);
-			
+
 			// Note: We don't set a message here as this is a trigger, not a direct user action
 			// The warning will be shown in the UI when viewing the invoice
 		}

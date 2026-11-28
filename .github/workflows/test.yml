@@ -1,0 +1,231 @@
+# Instance tests of the module against a real Dolibarr: the PHPUnit files
+# of test/phpunit, one process per file, then the page smoke over the
+# pages the module adds. The instance setup (MariaDB service, Dolibarr
+# sources and demo dump held by the actions/cache entry, demo dump
+# retagged with install/step5.php, conf.php with forced authentication)
+# follows mdeweerd/dolibarr-mcp (.github/workflows/integration.yml),
+# adapted to a PHP module: the repository root IS the module, deployed
+# as a real copy in htdocs/custom the way a developer does it.
+name: test
+permissions:
+  contents: read
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DOLIBARR_ROOT: /home/runner/dolibarr
+  DOLIBARR_HTDOCS: /home/runner/dolibarr/htdocs
+  DOLIBARR_DOCUMENTS_ROOT: /home/runner/dolibarr/documents
+  # Dolibarr release the test instance runs against. The demo dump ships
+  # at the .0 of the series; the guard step below proves the retag with
+  # step5.php is sound for this exact tag.
+  DOLIBARR_TEST_REF: "24.0.4"
+  MODULE: shippingtracker
+  MODULE_CLASS: modShippingTracker
+  RIGHTS_CLASS: shippingtracker
+
+  DB_HOST: 127.0.0.1
+  DB_PORT: "3306"
+  DB_NAME: dolibarr
+  DB_USER: root
+  DB_PASSWORD: dolibarr
+
+jobs:
+  phpunit-smoke:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: ${{ env.DB_PASSWORD }}
+          MARIADB_DATABASE: ${{ env.DB_NAME }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+
+      # The Dolibarr download IS the cache: keyed on the test ref, holding
+      # the extracted sources and the demo dump, so nothing Dolibarr-side
+      # is redone per pipeline unless the ref changes.
+      - name: Restore Dolibarr sources and demo dump from cache
+        id: dolibarr-cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.DOLIBARR_ROOT }}
+          key: dolibarr-test-${{ env.DOLIBARR_TEST_REF }}-v1
+          restore-keys: |
+            dolibarr-test-${{ env.DOLIBARR_TEST_REF }}-
+
+      - name: Download Dolibarr (cache miss only)
+        if: steps.dolibarr-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          ref="${DOLIBARR_TEST_REF}"
+          maj="${ref%%.*}"
+          mkdir -p "${DOLIBARR_ROOT}"
+          # Resumable and retried: a mid-transfer reset costs the remaining
+          # bytes, not the whole download.
+          curl -fsSL --retry 5 --retry-delay 5 --retry-all-errors --continue-at - \
+            -o /tmp/dolibarr.tar.gz \
+            "https://github.com/Dolibarr/dolibarr/archive/refs/tags/${ref}.tar.gz"
+          tar -xzf /tmp/dolibarr.tar.gz -C "${DOLIBARR_ROOT}" --strip-components=1
+          rm -f /tmp/dolibarr.tar.gz
+          # The release tarball export-ignores dev/, so the demo dump is
+          # fetched separately from the blob at the same tag.
+          mkdir -p "${DOLIBARR_ROOT}/dev/initdemo"
+          curl -fsSL --retry 5 --retry-delay 5 --retry-all-errors --continue-at - \
+            -o "${DOLIBARR_ROOT}/dev/initdemo/mysqldump_dolibarr_${maj}.0.0.sql" \
+            "https://raw.githubusercontent.com/Dolibarr/dolibarr/${ref}/dev/initdemo/mysqldump_dolibarr_${maj}.0.0.sql"
+
+      # Fail loudly when the step5.php retag would be unsound: the demo
+      # dump is the .0 of the series, so the branch must carry no x.y.z
+      # migration scripts within the same minor series.
+      - name: Guard the step5 retag against x.y.z migration scripts
+        run: |
+          set -euo pipefail
+          ref="${DOLIBARR_TEST_REF}"
+          series="${ref%.*}"
+          hits=$(find "${DOLIBARR_ROOT}/htdocs/install" \( -name "${series}.*-${series}.*.sql" -o -name "${series}.*-${series}.*.php" \) 2>/dev/null || true)
+          if [ -n "${hits}" ]; then
+            echo "FAIL: Dolibarr ${ref} carries x.y.z migration scripts for ${series};" >&2
+            echo "${hits}" >&2
+            echo "the demo dump is ${series}.0 and cannot be retagged to ${ref} with step5.php." >&2
+            exit 1
+          fi
+          echo "OK: no ${series}.x migration scripts in ${ref}; step5 retag is sound"
+
+      # Dolibarr documents its maximum PHP version in
+      # htdocs/install/check.php ($arrayphpmaxversionwarning); the enforce
+      # step below fails clearly if the pinned PHP ever exceeds it.
+      - name: Derive max PHP version from the Dolibarr sources
+        run: |
+          max=$(sed -n 's/.*\$arrayphpmaxversionwarning\s*=\s*array\s*(\s*\([0-9]\+\)\s*,\s*\([0-9]\+\).*/\1.\2/p' \
+            "${DOLIBARR_ROOT}/htdocs/install/check.php")
+          if [ -z "${max}" ]; then
+            echo "Could not extract \$arrayphpmaxversionwarning from check.php"
+            exit 1
+          fi
+          echo "DOLIBARR_MAX_PHP=${max}" >> "${GITHUB_ENV}"
+          echo "Dolibarr ${DOLIBARR_TEST_REF} max PHP: ${max}"
+
+      - name: Set up PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: mysqli, gd, intl, zip, mbstring, curl, xml
+          coverage: none
+      - run: |
+          php -v
+          php -m | grep -ixE 'mysqli|gd|intl|zip|mbstring|curl|xml' | sort
+
+      - name: Enforce Dolibarr max PHP version
+        run: |
+          installed=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
+          if php -r 'exit(version_compare(PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION, getenv("DOLIBARR_MAX_PHP"), ">"));'; then
+            echo "OK: PHP ${installed} does not exceed Dolibarr max ${DOLIBARR_MAX_PHP}"
+          else
+            echo "FAIL: PHP ${installed} exceeds Dolibarr max ${DOLIBARR_MAX_PHP} (htdocs/install/check.php)"
+            exit 1
+          fi
+
+      # Through bash on purpose: the executable bit in git never decides
+      # the job (run, not rely).
+      - name: Load demo database and configure the instance
+        run: |
+          set -o pipefail
+          bash .ci/scripts/setup-test-instance.sh 2>&1 | tee setup-test-instance.log
+      - name: Surface the instance setup failure as annotations
+        if: failure()
+        run: |
+          set -uo pipefail
+          if [ ! -s setup-test-instance.log ]; then exit 0; fi
+          tail -12 setup-test-instance.log | cut -c1-400 | while IFS= read -r line; do printf '::error::%s\n' "${line}"; done
+
+
+      # The module lives at the root of this repository: the whole
+      # checkout is the module, deployed the way a developer does it.
+      # A real copy, not a symlink: module pages include main.inc.php
+      # through a relative path ("../../main.inc.php") that PHP
+      # resolves against the real script directory, and a symlink
+      # would leave that directory outside htdocs.
+      - name: Deploy the module as a real copy
+        run: |
+          mkdir -p "${DOLIBARR_HTDOCS}/custom/${MODULE}"
+          tar -C "${GITHUB_WORKSPACE}" --exclude=.git -cf - . \
+            | tar -C "${DOLIBARR_HTDOCS}/custom/${MODULE}" -xf -
+
+      # Activates the module the way Home - Setup - Modules does (which
+      # replays the activation data), then grants the module rights to
+      # the CI user, who does not implicitly hold them as an admin.
+      - name: Activate the module and grant its rights
+        run: |
+          set -o pipefail
+          php .ci/scripts/activate-module.php 2>&1 | tee activate-module.log
+      - name: Surface the activation failure as annotations
+        if: failure()
+        run: |
+          set -uo pipefail
+          if [ ! -s activate-module.log ]; then exit 0; fi
+          tail -12 activate-module.log | cut -c1-400 | while IFS= read -r line; do printf '::error::%s\n' "${line}"; done
+
+      # One process per test file: a fatal in one file takes that file
+      # down, not the whole suite. The test files bootstrap themselves
+      # against the htdocs of this instance (TARGET_HTDOCS).
+      - name: Run the PHPUnit test files
+        run: |
+          set -euo pipefail
+          curl -fsSLo phpunit.phar https://phar.phpunit.de/phpunit-9.6.29.phar
+          chmod +x phpunit.phar
+          shopt -s nullglob
+          files=(test/phpunit/*Test.php)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No PHPUnit test file yet (PLAN.md, Phase 1 adds the first ones); the page smoke below is the instance check of today."
+          else
+            failed=""; passed=0
+            for file in "${files[@]}"; do
+              name=$(basename "${file}")
+              echo "==== ${name}"
+              if php phpunit.phar --no-configuration --testdox "${file}"; then
+                passed=$((passed + 1))
+              else
+                failed="${failed} ${name}"
+              fi
+            done
+            echo "${passed} test file(s) passed"
+            if [ -n "${failed}" ]; then
+              echo "Failed test files:${failed}"
+              exit 1
+            fi
+          fi
+
+      # The pages of the module have to open: 200, no PHP error in the
+      # body or the server log, and the marker of the feature on each
+      # module page (a forbidden zone answers 200 as well).
+      - name: Page smoke
+        run: |
+          set -o pipefail
+          bash .ci/scripts/smoke-pages.sh 2>&1 | tee page-smoke.log
+      - name: Surface the page smoke failure as annotations
+        if: failure()
+        run: |
+          set -uo pipefail
+          if [ ! -s page-smoke.log ]; then exit 0; fi
+          grep -aE 'ERROR:|Precheck:|Probe:|PHP Fatal|PHP Parse|Uncaught' page-smoke.log | head -12 > /tmp/smoke-lines.log || true
+          if [ ! -s /tmp/smoke-lines.log ]; then tail -12 page-smoke.log > /tmp/smoke-lines.log; fi
+          cut -c1-400 /tmp/smoke-lines.log | while IFS= read -r line; do printf '::error::%s\n' "${line}"; done
+
+      - name: Provide server log as artifact
+        uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: dolibarr-server-log
+          path: php-server.log
+          retention-days: 2

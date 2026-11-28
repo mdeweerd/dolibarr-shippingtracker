@@ -110,7 +110,7 @@ if ($action == 'set') {
 
 		$conf->shippingtracker = GETPOST('value', 'alpha');
 	}
-	
+
 	if (!GETPOST('notrigger', 'int')) {
 		// Force activation of triggers
 		$res = $hookmanager->initHooks(array('shippingtrackersetup'));

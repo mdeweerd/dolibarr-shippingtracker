@@ -1,0 +1,173 @@
+# Static analysis of the module against the Dolibarr core it targets:
+# PHPStan (2.x) and Phan (6.x), each in its own job; Phan runs after
+# PHPStan so the two baseline commits of a first run land in order. The
+# analysers never execute the Dolibarr entry script; the symbols it
+# defines only at runtime come from .ci/dolibarr-runtime.php, loaded by
+# both configs (PHPStan via .ci/phpstan-bootstrap.php, Phan via its
+# file_list).
+#
+# The module is existing code being brought under analysis, so each
+# analyser works from a generated baseline: only NEW findings fail the
+# job. The first run on a branch generates the baselines and pushes
+# them to the branch with the workflow token; a commit made by that
+# token never triggers another workflow run, so there is no loop. From
+# then on the committed baselines decide and shrink as findings are
+# lifted (PLAN.md, Phase 0 and Phase 2).
+name: analyse
+permissions:
+  contents: read
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  # Dolibarr core checkout the module is analysed against (branch or tag).
+  DOLIBARR_REF: "24.0"
+
+jobs:
+  phpstan:
+    runs-on: ubuntu-latest
+    # The baseline bootstrap of the first run pushes to the branch.
+    permissions:
+      contents: write
+    steps:
+      # The branch head, not the PR merge ref: the baseline commit of
+      # the first run is pushed back to the branch.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          coverage: none
+      # The Dolibarr checkout IS the cache: nothing core-side is redone
+      # per pipeline as long as the ref does not change.
+      - name: Restore the Dolibarr core checkout from cache
+        id: core-cache
+        uses: actions/cache@v6
+        with:
+          path: dolibarr/
+          key: analyse-dolibarr-24.0-v1
+          restore-keys: |
+            analyse-dolibarr-24.0-
+      - name: Download the Dolibarr core (cache miss only)
+        if: steps.core-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          curl -sSLo dolibarr.tar.gz "https://codeload.github.com/Dolibarr/dolibarr/tar.gz/${DOLIBARR_REF}"
+          mkdir -p dolibarr
+          tar -xzf dolibarr.tar.gz -C dolibarr --strip-components=1
+      - name: PHPStan
+        run: |
+          set -euo pipefail
+          curl -fsSLo phpstan.phar https://github.com/phpstan/phpstan/releases/latest/download/phpstan.phar
+          # Baseline bootstrap: the committed placeholder means no
+          # snapshot exists yet. Generate it, then analyse from it so
+          # the job is green once the step below has committed it.
+          # 2>&1 on purpose: the annotations step below needs a crash
+          # report in the log, not only on the raw console.
+          if grep -q 'PLACEHOLDER' phpstan-baseline.neon 2>/dev/null; then
+            echo "No PHPStan baseline yet: generating it."
+            php phpstan.phar analyse -c phpstan.neon.dist --no-progress --memory-limit=2G --generate-baseline 2>&1 | tee /tmp/phpstan.log
+          else
+            php phpstan.phar analyse -c phpstan.neon.dist --no-progress --memory-limit=2G 2>&1 | tee /tmp/phpstan.log
+          fi
+      - name: Surface the PHPStan failure as annotations
+        if: failure()
+        run: |
+          set -uo pipefail
+          if [ ! -s /tmp/phpstan.log ]; then
+            echo "::error::PHPStan produced no readable output; see the raw log of the run"
+            exit 0
+          fi
+          tail -12 /tmp/phpstan.log | cut -c1-400 | while IFS= read -r line; do printf '::error::%s\n' "${line}"; done
+      - name: Commit the freshly generated baseline (when it changed)
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add phpstan-baseline.neon
+          if git diff --cached --quiet; then
+            echo 'phpstan-baseline.neon unchanged: nothing to commit.'
+          else
+            git commit -m 'Add the generated PHPStan baseline'
+            git push origin "HEAD:${TARGET_BRANCH}"
+          fi
+        env:
+          TARGET_BRANCH: ${{ github.head_ref || github.ref_name }}
+
+  phan:
+    # After the PHPStan job: the two baseline commits of a first run
+    # land one after the other instead of racing on the branch.
+    needs: phpstan
+    runs-on: ubuntu-latest
+    # The baseline bootstrap of the first run pushes to the branch.
+    permissions:
+      contents: write
+    steps:
+      # The branch head, not the PR merge ref: the baseline commit of
+      # the first run is pushed back to the branch.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: shivammathur/setup-php@v2
+        with:
+          # ast: Phan refuses the slower polyfill parse without it.
+          php-version: "8.3"
+          extensions: ast
+          coverage: none
+      - name: Restore the Dolibarr core checkout from cache
+        id: core-cache
+        uses: actions/cache@v6
+        with:
+          path: dolibarr/
+          key: analyse-dolibarr-24.0-v1
+          restore-keys: |
+            analyse-dolibarr-24.0-
+      - name: Download the Dolibarr core (cache miss only)
+        if: steps.core-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          curl -sSLo dolibarr.tar.gz "https://codeload.github.com/Dolibarr/dolibarr/tar.gz/${DOLIBARR_REF}"
+          mkdir -p dolibarr
+          tar -xzf dolibarr.tar.gz -C dolibarr --strip-components=1
+      - name: Phan
+        run: |
+          set -euo pipefail
+          curl -fsSLo phan.phar https://github.com/phan/phan/releases/latest/download/phan.phar
+          # Baseline bootstrap: no committed baseline means no snapshot
+          # exists yet. Generate it, then analyse from it so the job
+          # is green once the step below has committed it.
+          if [ ! -f .phan/baseline.txt ]; then
+            echo "No Phan baseline yet: generating it."
+            # --save-baseline exits 1 when findings exist: the load run
+            # below is what decides, so do not fail the step here.
+            php -d memory_limit=2G phan.phar --no-progress-bar --save-baseline .phan/baseline.txt 2>&1 | tee /tmp/phan.log || true
+          else
+            php -d memory_limit=2G phan.phar --no-progress-bar --load-baseline .phan/baseline.txt 2>&1 | tee /tmp/phan.log
+          fi
+      - name: Surface the Phan failure as annotations
+        if: failure()
+        run: |
+          set -uo pipefail
+          if [ ! -s /tmp/phan.log ]; then
+            echo "::error::Phan produced no readable output; see the raw log of the run"
+            exit 0
+          fi
+          tail -12 /tmp/phan.log | cut -c1-400 | while IFS= read -r line; do printf '::error::%s\n' "${line}"; done
+      - name: Commit the freshly generated baseline (when it changed)
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .phan/baseline.txt
+          if git diff --cached --quiet; then
+            echo '.phan/baseline.txt unchanged: nothing to commit.'
+          else
+            git commit -m 'Add the generated Phan baseline'
+            git push origin "HEAD:${TARGET_BRANCH}"
+          fi
+        env:
+          TARGET_BRANCH: ${{ github.head_ref || github.ref_name }}

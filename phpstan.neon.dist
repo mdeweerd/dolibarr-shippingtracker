@@ -1,0 +1,72 @@
+# PHPStan config for the module of this repository - PHPStan 2.x
+# (latest), adapted from the Dolibarr core config (level 10 with the
+# core's pragmatism flags) for a single-module analysis: the module
+# directories at the ROOT of the repository are analysed (the module is
+# not in a subdirectory), the Dolibarr core in dolibarr/ (see
+# .github/workflows/analyse.yml) is only scanned for symbols. The legacy
+# findings of the module live in the committed phpstan-baseline.neon:
+# only NEW findings fail the job, and the baseline shrinking is the
+# progress bar of the port backlog (PLAN.md, Phase 2).
+includes:
+	- phpstan-baseline.neon
+
+parameters:
+	bootstrapFiles:
+		- .ci/phpstan-bootstrap.php
+	phpVersion: 80200
+	level: 10
+	fileExtensions:
+		- php
+	parallel:
+		processTimeout: 600.0
+		maximumNumberOfProcesses: 4
+	paths:
+		- admin
+		- class
+		- core
+		- lib
+	scanDirectories:
+		- dolibarr/htdocs/core
+		- dolibarr/htdocs/fourn/class
+		- dolibarr/htdocs/expedition/class
+	excludePaths:
+		analyse:
+			- dolibarr
+	polluteScopeWithLoopInitialAssignments: false
+	polluteScopeWithAlwaysIterableForeach: false
+	checkClassCaseSensitivity: true
+	checkFunctionArgumentTypes: true
+	checkFunctionNameCase: true
+	checkInternalClassCaseSensitivity: true
+	checkArgumentsPassedByReference: true
+	checkMaybeUndefinedVariables: true
+	checkNullables: false
+	checkThisOnly: true
+	checkUnionTypes: false
+	checkExplicitMixedMissingReturn: true
+	reportMaybes: false
+	reportMaybesInMethodSignatures: false
+	reportStaticMethodSignatures: false
+	reportMagicMethods: false
+	reportMagicProperties: false
+	treatPhpDocTypesAsCertain: false
+	reportUnmatchedIgnoredErrors: false
+	universalObjectCratesClasses:
+		- stdClass
+		- SimpleXMLElement
+	ignoreErrors:
+		# Standard module page loader probes main.inc.php at runtime only.
+		- '#^Path in .*main\.inc\.php.* is not a file or it does not exist\.$#'
+		# phan-specific annotations kept for Dolibarr core compatibility.
+		- '#.*phan-var#'
+
+		# Dolibarr page globals come from the runtime include of
+		# main.inc.php, invisible to static analysis. The core hides the
+		# same reports in its own phpstan baseline; there is no core
+		# baseline for a single module.
+		- '#^Variable \$(user|db|langs|conf|mysoc|hookmanager) might not be defined#'
+		# Menu entries use the same key set as the core module descriptors;
+		# the phpdoc of DolibarrModules::$menu wants two keys more
+		# (fk_parent, positionfull) that even core descriptors do not
+		# provide. The core baselines this report, this mirrors it.
+		- '#^Property DolibarrModules::\$menu \(#'

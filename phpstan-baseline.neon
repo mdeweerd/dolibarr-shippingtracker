@@ -1,0 +1,79 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: admin/shippingtracker_setup.php
+
+		-
+			message: '#^PHPDoc tag @var for variable \$mysoc contains unknown class Societe\.$#'
+			identifier: class.notFound
+			count: 1
+			path: admin/shippingtracker_setup.php
+
+		-
+			message: '#^PHPDoc tag @var for variable \$user contains unknown class User\.$#'
+			identifier: class.notFound
+			count: 1
+			path: admin/shippingtracker_setup.php
+
+		-
+			message: '#^Method ActionsShippingTracker\:\:doActions\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: class/actions_shippingtracker.class.php
+
+		-
+			message: '#^Method ActionsShippingTracker\:\:formObjectOptions\(\) has parameter \$parameters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: class/actions_shippingtracker.class.php
+
+		-
+			message: '#^Method ActionsShippingTracker\:\:getTrackingInfoFromExtrafields\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: class/actions_shippingtracker.class.php
+
+		-
+			message: '#^Property CommonObject\:\:\$array_options \(array\<string, mixed\>\) in isset\(\) is not nullable\.$#'
+			identifier: isset.property
+			count: 1
+			path: class/actions_shippingtracker.class.php
+
+		-
+			message: '#^Trait TrackingTrait is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: class/traits/trackingtrait.class.php
+
+		-
+			message: '#^Access to an undefined property modShippingTracker\:\:\$menus\.$#'
+			identifier: property.notFound
+			count: 1
+			path: core/modules/modShippingTracker.class.php
+
+		-
+			message: '#^Parameter \$user of method InterfaceShippingTrackerTriggers\:\:checkInvoiceTrackingConsistency\(\) has invalid type User\.$#'
+			identifier: class.notFound
+			count: 1
+			path: core/triggers/interface_99_modShippingTracker_Triggers.class.php
+
+		-
+			message: '#^Parameter \$user of method InterfaceShippingTrackerTriggers\:\:runTrigger\(\) has invalid type User\.$#'
+			identifier: class.notFound
+			count: 1
+			path: core/triggers/interface_99_modShippingTracker_Triggers.class.php
+
+		-
+			message: '#^Parameter \$user of method InterfaceShippingTrackerTriggers\:\:syncTrackingOnOrderModify\(\) has invalid type User\.$#'
+			identifier: class.notFound
+			count: 1
+			path: core/triggers/interface_99_modShippingTracker_Triggers.class.php
+
+		-
+			message: '#^Property DolibarrTriggers\:\:\$version \(''''\|''development''\|''dolibarr''\|''experimental''\) does not accept ''1\.0\.0''\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: core/triggers/interface_99_modShippingTracker_Triggers.class.php

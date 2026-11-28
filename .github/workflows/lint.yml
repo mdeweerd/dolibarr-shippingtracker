@@ -1,0 +1,88 @@
+# Lint jobs of the CI: the PHP syntax check of the module and of the CI
+# scripts, and the pre-commit hooks over the whole tree. The heavy
+# analysis (phpstan, phan) lives in analyse.yml, the instance tests in
+# test.yml.
+name: lint
+permissions:
+  contents: read
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  php-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          coverage: none
+      # Through an explicit list on purpose: the module lives at the ROOT
+      # of this repository, so the list below is the module layout itself.
+      - name: Syntax check of the module and the CI scripts
+        run: |
+          set -euo pipefail
+          find admin class core lib .ci/scripts -type f -name '*.php' -print0 | xargs -0 -r -n1 php -l
+
+  pre-commit:
+    runs-on: ubuntu-latest
+    env:
+      RAW_LOG: pre-commit.log
+      CS_XML: pre-commit.xml
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - run: python -m pip install pre-commit
+      - uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/pre-commit/
+          key: pre-commit-4|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      # The local php-lint hook is skipped here: this job has no PHP, the
+      # dedicated php-lint job above runs it.
+      - name: Run pre-commit hooks
+        env:
+          SKIP: php-lint
+        run: |
+          set -o pipefail
+          # No pre-commit gc: it fails on the fresh cache of an ephemeral
+          # runner and, with the -e shell of the Actions steps, kills the
+          # job before the hooks run; there is nothing to collect anyway.
+          # 2>&1 on purpose: a pre-commit crash prints its traceback on
+          # stderr only; the annotations step below needs it in the log.
+          pre-commit run --show-diff-on-failure --color=always --all-files 2>&1 | tee ${RAW_LOG}
+      - name: Convert Raw Log to Checkstyle format (launch action)
+        uses: mdeweerd/logToCheckStyle@b74819f11580d6f201df20f2df04056c3e3356d6  # v2026.11.1
+        if: ${{ failure() }}
+        with:
+          in: ${{ env.RAW_LOG }}
+      - name: Surface the pre-commit failure as annotations
+        if: failure()
+        run: |
+          set -uo pipefail
+          if [ ! -s "${RAW_LOG}" ]; then
+            echo "::error::pre-commit produced no readable output; see the raw log of the run"
+            exit 0
+          fi
+          sed 's/\x1b\[[0-9;]*m//g' "${RAW_LOG}" > /tmp/pc-clean.log
+          grep -aiE 'error|failed|fail|traceback|invalid' /tmp/pc-clean.log | head -12 > /tmp/pc-lines.log || true
+          if [ ! -s /tmp/pc-lines.log ]; then tail -12 /tmp/pc-clean.log > /tmp/pc-lines.log; fi
+          cut -c1-400 /tmp/pc-lines.log | while IFS= read -r line; do printf '::error::%s\n' "${line}"; done
+      - uses: actions/cache/save@v6
+        if: ${{ !cancelled() }}
+        with:
+          path: ~/.cache/pre-commit/
+          key: pre-commit-4|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Provide log as artifact
+        uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: precommit-logs
+          path: |
+            ${{ env.RAW_LOG }}
+            ${{ env.CS_XML }}
+          retention-days: 2
